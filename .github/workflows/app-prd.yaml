@@ -1,0 +1,51 @@
+name: Build and Deploy Container to Azure Web App
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/app-prd.yaml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/app-prd.yaml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  REGISTRY_IMAGE: "${{ secrets.ACR_NAME }}.azurecr.io/app:${{ github.sha }}"
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Login no Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build e push da imagem Docker
+        working-directory: src
+        run: |
+          docker build -t ${{ env.REGISTRY_IMAGE }} .
+          docker push ${{ env.REGISTRY_IMAGE }}
+
+      - name: Atualizar o App Service para usar nova imagem
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'app-prod001'
+          images: '${{ env.REGISTRY_IMAGE }}'
