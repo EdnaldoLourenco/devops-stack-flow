@@ -1,0 +1,65 @@
+name: Terraform deploy Infra PRD to Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      destroy:
+        description: 'Destruir infraestrutura?'
+        required: true
+        default: 'false'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    if: ${{ github.event.inputs.destroy == 'false' }}
+    name: Terraform Validate and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Login no Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Validar Sintaxe , Plano e Deploy
+        working-directory: infra
+        run: |
+          export ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
+          terraform init
+          terraform fmt -check
+          terraform validate
+          terraform plan -out=tfplan
+          terraform apply -auto-approve
+
+
+  destroy:
+    if: ${{ github.event.inputs.destroy == 'true' }}
+    name: 🧨 Destruir Infraestrutura
+    runs-on: ubuntu-latest
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Login no Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Executar Terraform Destroy
+        working-directory: infra
+        run: |
+          terraform init
+          terraform destroy -auto-approve
