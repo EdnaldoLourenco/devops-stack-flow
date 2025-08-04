@@ -3,6 +3,7 @@ FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # Copia o projeto e instala as dependências
+COPY pom.xml .
 COPY . ./src
 
 # Compila o projeto e gera o jar
