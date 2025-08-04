@@ -29,6 +29,23 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.3
+
+      - name: Scan do código da aplicação
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './src'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          scanners: 'vuln, secret, misconfig'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0' 
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
       - name: Login no Azure
         uses: azure/login@v2
         with:
@@ -41,9 +58,6 @@ jobs:
         working-directory: src
         run: |
           docker build -t ${{ env.REGISTRY_IMAGE }} .
-
-      - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.2.3
 
       - name: Scan Docker image com Trivy
         uses: aquasecurity/trivy-action@master
