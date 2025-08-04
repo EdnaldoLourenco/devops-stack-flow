@@ -16,6 +16,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  security-events: write
 
 env:
   REGISTRY_IMAGE: "${{ secrets.ACR_NAME }}.azurecr.io/app:${{ github.sha }}"
