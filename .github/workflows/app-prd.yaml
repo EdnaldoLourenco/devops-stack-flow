@@ -38,6 +38,8 @@ jobs:
         run: |
           az acr login --name ${{ secrets.ACR_NAME }}
 
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
       - name: Build da imagem Docker
         working-directory: src
         run: |
