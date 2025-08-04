@@ -38,10 +38,22 @@ jobs:
         run: |
           az acr login --name ${{ secrets.ACR_NAME }}
 
-      - name: Build e push da imagem Docker
+      - name: Build da imagem Docker
         working-directory: src
         run: |
           docker build -t ${{ env.REGISTRY_IMAGE }} .
+      - name: Scan Docker image com Trivy
+        uses: aquasecurity/trivy-action@v0.14.0
+        with:
+          image-ref: ${{ env.REGISTRY_IMAGE }}
+          format: 'table'
+          exit-code: '1'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push da imagem docker
+        working-directory: src
+        run: |
           docker push ${{ env.REGISTRY_IMAGE }}
 
       - name: Atualizar o App Service para usar nova imagem
